@@ -1,27 +1,27 @@
 import json
 import requests
 import urllib
+import prompt
+import getpass
+import time
 
-base_url = 'https://diksha.gov.in'      # this should be a command-line argument
+base_url = raw_input("Please enter base url: ")                  # this should be a command-line argument
 realm_url = base_url + '/auth/realms'
-realm = "sunbird"
-api_key = "api gateway key"                    # prompt the user for this
-admin_username = "keycalok admin user name"    # prompt the user for this
-password = "password"                          # prompt the user for this
-
-
+realm = raw_input("Please enter realm: ")
+api_key = raw_input("Please enter api key: ")                   # the user should be prompted for this
+admin_username = raw_input("Please enter user name: ")          # the user should be prompted for this
+provider_id =   raw_input("Please enter provider value: ")      # the user should be prompted for this
+keycloak_realm_url = base_url +'auth/admin/realms/'+realm
 def login_admin_user(username, password):
-    """Given an admin username and password, will return an admin-cli client 
-    access token."""
+    """Given an admin username and password, will return an admin-cli client access token."""
     login_url = realm_url+'/'+realm+'/protocol/openid-connect/token'
     headers = {
-        # does this need to be x-www-form-urlencoded? can it be application/json?
-        'content-type': "application/x-www-form-urlencoded",    
+        'content-type': "application/x-www-form-urlencoded",    # does this need to be x-www-form-urlencoded? can it be application/json?
         'cache-control': "no-cache",
     }
     payload_data = {
         'client_id': 'admin-cli',
-        'grant_type': 'password'
+        'grant_type': 'password',
         'username': username,
         'password': password
     }
@@ -30,13 +30,17 @@ def login_admin_user(username, password):
     
     # extracting data in json format
     data = response.json()
+    print(data)
     return data['access_token']
 
+	
+def prompt_user_for_password():
+     return getpass.getpass()
 
 def find_users(filters, api_key, user_token):
     """Given a search query, finds users who match the query."""    
     url = base_url + "/api/user/v1/search"
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f+%Z")
+    timestamp = int(round(time.time() * 1000))
     
     headers = {
         'content-type': "application/json",
@@ -51,7 +55,7 @@ def find_users(filters, api_key, user_token):
         'ts': timestamp,
         'params': {},
         'request': {
-            'filters': filters
+            'filters': filters,
             'fields': ['identifier'],
             'limit':5000,
         }
@@ -65,12 +69,14 @@ def find_users(filters, api_key, user_token):
         payload['request']['offset'] = fetched_user_ids
         response = requests.request("POST", url, data=json.dumps(payload), headers=headers)
         data = response.json()
+        print(data)
         content = data['result']['response']['content']
         
         for user_details in content:
             yield user_details['identifier']
    
         size = data['result']['response']['count']
+        print(size)
         fetched_user_ids += size
         
         if size < payload['request']['limit']:
@@ -80,9 +86,8 @@ def find_users(filters, api_key, user_token):
         
 
 def remove_all_required_actions(user_id, keycloak_admin_token):
-    """Given a user-id and an keycloak admin user token, remove all required 
-    actions for the user."""
-    url = base_url+keycloak_realm_url+'/users/'+identifier
+    """Given a user-id and an keycloak admin user token, remove all required actions for the user."""
+    url = keycloak_realm_url+'/users/'+user_id
     payload = json.dumps({'requiredActions':[]})
     headers = {
         'authorization': "Bearer "+keycloak_admin_token,
@@ -91,16 +96,17 @@ def remove_all_required_actions(user_id, keycloak_admin_token):
     }
     
     response = requests.request("PUT", url, data=payload, headers=headers)
+    print(response)
     result = response.json()
     return result
     
     
 if __name__ == "__main__":
     admin_password = prompt_user_for_password()
-    keycloak_admin_token = login_admin_user(admin, admin_password)
+    keycloak_admin_token = login_admin_user(admin_username, admin_password)
     
     found, success, fail = 0, 0, 0
-    for user_id in find_users(filter={'provider': provider_id}, api_key, user_token):
+    for user_id in find_users({'provider': provider_id}, api_key, keycloak_admin_token):
         found += 1
         result = remove_all_required_actions(user_id, keycloak_admin_token)
         if result == OK:
