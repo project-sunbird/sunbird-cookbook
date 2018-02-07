@@ -2,19 +2,21 @@ import json
 import requests
 import urllib
 
-base_url = 'https://diksha.gov.in'                    # this should be a command-line argument
+base_url = 'https://diksha.gov.in'      # this should be a command-line argument
 realm_url = base_url + '/auth/realms'
 realm = "sunbird"
-api_key = "api gateway key";                          # the user should be prompted for this
-admin_username = "keycalok admin user name"           # the user should be prompted for this
-password = "password"                                 # the user should be prompted for this
+api_key = "api gateway key"                    # prompt the user for this
+admin_username = "keycalok admin user name"    # prompt the user for this
+password = "password"                          # prompt the user for this
 
 
 def login_admin_user(username, password):
-    """Given an admin username and password, will return an admin-cli client access token."""
+    """Given an admin username and password, will return an admin-cli client 
+    access token."""
     login_url = realm_url+'/'+realm+'/protocol/openid-connect/token'
     headers = {
-        'content-type': "application/x-www-form-urlencoded",    # does this need to be x-www-form-urlencoded? can it be application/json?
+        # does this need to be x-www-form-urlencoded? can it be application/json?
+        'content-type': "application/x-www-form-urlencoded",    
         'cache-control': "no-cache",
     }
     payload_data = {
@@ -78,7 +80,8 @@ def find_users(filters, api_key, user_token):
         
 
 def remove_all_required_actions(user_id, keycloak_admin_token):
-    """Given a user-id and an keycloak admin user token, remove all required actions for the user."""
+    """Given a user-id and an keycloak admin user token, remove all required 
+    actions for the user."""
     url = base_url+keycloak_realm_url+'/users/'+identifier
     payload = json.dumps({'requiredActions':[]})
     headers = {
