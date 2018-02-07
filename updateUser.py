@@ -1,58 +1,111 @@
+import json
 import requests
+import urllib
 
-username = "keycalok admin user name"
-password = "password"
-releam = "sunbird"
-apiKey = "api gateway key";
-keycloakUrl = "https://diksha.gov.in/auth/realms/"
-keycloakRestUrl = "BaseUrl/auth/admin/realms"
-filterKey = "apekx"
-url = keycloakUrl+releam+"/protocol/openid-connect/token"
+base_url = 'https://diksha.gov.in'                    # this should be a command-line argument
+realm_url = base_url + '/auth/realms'
+realm = "sunbird"
+api_key = "api gateway key";                          # the user should be prompted for this
+admin_username = "keycalok admin user name"           # the user should be prompted for this
+password = "password"                                 # the user should be prompted for this
 
-payload = "client_id=admin-cli&username="+username+"&password="+password+"&grant_type=password"
-headers = {
-    'content-type': "application/x-www-form-urlencoded",
-    'cache-control': "no-cache",
-    'postman-token': "dd6be762-a743-e847-50ec-bd1393403349"
-    }
 
-response = requests.request("POST", url, data=payload, headers=headers)
-
-#print(response.text)
-# extracting data in json format
-data = response.json()
-token = data['access_token']
-
-url = "https://diksha.gov.in/api/user/v1/search"
-
-payload = "\n{\n\"id\":\"unique API ID\",\n\"ts\":\"2013/10/15 16:16:39\",\n  \"params\": {\n      \n  },\n \"request\": {\n        \"filters\":{\n           \"provider\":\""+filterKey+"\"\n        },\n        \"fields\":[\"identifier\"],\n        \"limit\":10000,\n        \"offset\":0\n        \n    }\n}"
-headers = {
-    'content-type': "application/json",
-    'x-consumer-id': "X-Consumer-ID",
-    'ts': "2017-05-25 10:18:56:578+0530",
-    'x-msgid': "8e27cbf5-e299-43b0-bca7-8347f7e5abcf",
-    'authorization': "Bearer "+apiKey,
-    'x-authenticated-user-token': token,
-    
-    'cache-control': "no-cache",
-    'postman-token': "92c86733-7ca3-b7e0-1c9f-966118349b69"
-    }
-
-response = requests.request("POST", url, data=payload, headers=headers)
-
-data = response.json()
-size = data['result']['response']['count']
-
-for i in range(0,9999):
-    identifier = data['result']['response']['content'][i]['identifier']
-    url = keycloakRestUrl+releam+"/users/"+identifier
-    payload = "{\"requiredActions\":[]}"
+def login_admin_user(username, password):
+    """Given an admin username and password, will return an admin-cli client access token."""
+    login_url = realm_url+'/'+realm+'/protocol/openid-connect/token'
     headers = {
-    'authorization': "Bearer "+token,
-    'content-type': "application/json",
-    'cache-control': "no-cache",
-    'postman-token': "f33cf350-cd6c-76b6-969b-f74bab72b618"
+        'content-type': "application/x-www-form-urlencoded",    # does this need to be x-www-form-urlencoded? can it be application/json?
+        'cache-control': "no-cache",
     }
-    response = requests.request("PUT", url, data=payload, headers=headers)
-    print(response)
+    payload_data = {
+        'client_id': 'admin-cli',
+        'grant_type': 'password'
+        'username': username,
+        'password': password
+    }
+    payload = urllib.urlencode(payload_data)
+    response = requests.request('POST', login_url, data=payload, headers=headers)
+    
+    # extracting data in json format
+    data = response.json()
+    return data['access_token']
 
+
+def find_users(filters, api_key, user_token):
+    """Given a search query, finds users who match the query."""    
+    url = base_url + "/api/user/v1/search"
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f+%Z")
+    
+    headers = {
+        'content-type': "application/json",
+        'x-consumer-id': "X-Consumer-ID",
+        'ts': timestamp,
+        'authorization': "Bearer "+api_key,
+        'x-authenticated-user-token': user_token,
+        'cache-control': "no-cache"
+    }
+    payload = {
+        'id': None,
+        'ts': timestamp,
+        'params': {},
+        'request': {
+            'filters': filters
+            'fields': ['identifier'],
+            'limit':5000,
+        }
+    }
+    
+    fetched_user_ids = 0
+    
+    # keep calling the API in a loop until the number of records returned is less 
+    # than the number of records requested
+    while True:
+        payload['request']['offset'] = fetched_user_ids
+        response = requests.request("POST", url, data=json.dumps(payload), headers=headers)
+        data = response.json()
+        content = data['result']['response']['content']
+        
+        for user_details in content:
+            yield user_details['identifier']
+   
+        size = data['result']['response']['count']
+        fetched_user_ids += size
+        
+        if size < payload['request']['limit']:
+            # fewer records were retrieved vs the size requested
+            # so we have come to the end of the data, so stop looping
+            break
+        
+
+def remove_all_required_actions(user_id, keycloak_admin_token):
+    """Given a user-id and an keycloak admin user token, remove all required actions for the user."""
+    url = base_url+keycloak_realm_url+'/users/'+identifier
+    payload = json.dumps({'requiredActions':[]})
+    headers = {
+        'authorization': "Bearer "+keycloak_admin_token,
+        'content-type': "application/json",
+        'cache-control': "no-cache"
+    }
+    
+    response = requests.request("PUT", url, data=payload, headers=headers)
+    result = response.json()
+    return result
+    
+    
+if __name__ == "__main__":
+    admin_password = prompt_user_for_password()
+    keycloak_admin_token = login_admin_user(admin, admin_password)
+    
+    found, success, fail = 0, 0, 0
+    for user_id in find_users(filter={'provider': provider_id}, api_key, user_token):
+        found += 1
+        result = remove_all_required_actions(user_id, keycloak_admin_token)
+        if result == OK:
+            success += 1
+        else:
+            fail += 1
+            
+    print("Found {0} users via query: 'provider': {1}".format(found, provider_id))
+    print("Successfully removed login requirements for {0} users".format(success))
+    print("Unable to remove login requirements for {0} users".format(fail))
+    
