@@ -236,7 +236,7 @@ let createFramework = function (callback) {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + _constants.apiAuthToken,
             'user-id': 'content Editor',
-            'X-Channel-Id': 'in.ekstep'
+            'X-Channel-Id': _constants.channelId
         },
         body: {
             "request": {
@@ -286,7 +286,7 @@ let checkOrCreateCategory = function (callback) {
                 'content-type': 'application/json',
                 'Authorization': 'Bearer ' + _constants.apiAuthToken,
                 'user-id': 'content Editor',
-                'X-Channel-Id': 'in.ekstep'
+                'X-Channel-Id': _constants.channelId
             },
             json: true
         }
@@ -343,7 +343,7 @@ let createCategory = function (type, callback) {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + _constants.apiAuthToken,
             'user-id': 'Vaibhav',
-            'X-Channel-Id': 'in.ekstep'
+            'X-Channel-Id': _constants.channelId
         },
         body: {
             "request": {
@@ -816,7 +816,7 @@ let checkOrCreateTerm = function (term, category, termValue, termTraslationValue
             'content-type': 'application/json',
             'Authorization': 'Bearer ' + _constants.apiAuthToken,
             'user-id': 'Ekstep',
-            'X-Channel-Id': 'in.ekstep'
+            'X-Channel-Id': _constants.channelId
         },
         json: true
     }
