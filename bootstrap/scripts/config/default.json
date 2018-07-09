@@ -1,0 +1,21 @@
+{
+	// API Endpoints
+	"api_base_url": "",
+	"org_create_endpoint": "org/v1/create",
+	"user_create_endpoint": "user/v1/create",
+	"org_user_map_endpoint": "org/v1/member/add",
+
+	// Request params
+	"content_type_json": "application/json",
+	"auth_token": "",
+	"user_token": "",
+
+	// Path to input data csv files. Path is relative to index.js
+	"input_org_data": "data/input/org.csv",
+	"input_user_data": "data/input/user.csv",
+
+	// Path to output information csv files. Path is relative to index.js
+	"output_org_data": "data/output/org.csv",
+	"output_user_data": "data/output/user.csv",
+
+}
