@@ -16,6 +16,5 @@
 
 	// Path to output information csv files. Path is relative to index.js
 	"output_org_data": "data/output/org.csv",
-	"output_user_data": "data/output/user.csv",
-
+	"output_user_data": "data/output/user.csv"
 }
