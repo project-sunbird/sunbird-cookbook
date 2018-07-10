@@ -1,6 +1,5 @@
 # Bootstrap Sunbird with Organisations and Users
 This utility helps you easily create organisations and users in a Sunbird v1.8
-Note: This version supports organisation creation only.
 
 ### Installation
 This utility requires [Node.js](https://nodejs.org/) v8.11+ to run.
