@@ -8,10 +8,10 @@ Install the dependencies.
 $ npm install
 ```
 ### Configuration
-All the configurations are available in `config/default.json`
-`api_base_url`: Base URL of your Sunbird installation ending with `api/`.
-`auth_token`: Authorization token to make API calls.
-`user_token`: User access token belonging to a user having permissions to create organisations and users.
+All the configurations are available in `config/default.json`  
+`api_base_url`: Base URL of your Sunbird installation ending with `api/`.  
+`auth_token`: Authorization token to make API calls.  
+`user_token`: User access token belonging to a user having permissions to create organisations and users.  
 
 ### Data
 This utility accepts input data for creating organisations and users in csv format. Sample csv files are available in `data\input\org.csv` and `data\input\user.csv`. You may edit them to add the required data. 
