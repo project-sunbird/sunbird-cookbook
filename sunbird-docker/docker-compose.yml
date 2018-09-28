@@ -1,0 +1,107 @@
+version: '3.1'
+services:
+  mongo:
+    image : "mongo:latest"
+    ports:
+     - "27017:27017"
+ 
+  postgresql:
+        image: postgres
+        container_name: postgresql
+        ports:
+            - "5432:5432"       
+        environment:        
+            POSTGRES_USER: keycloak
+            POSTGRES_ROOT_PASSWORD: password
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: keycloak
+        restart: always 
+ 
+  keycloak1:
+     image: jboss/keycloak-ha-postgres
+     hostname: keycloak
+     environment:
+       KEYCLOAK_LOGLEVEL: DEBUG
+       POSTGRES_PORT_5432_TCP_ADDR: postgresql
+       POSTGRES_PORT_5432_TCP_PORT: 5432
+       POSTGRES_USER: keycloak
+       POSTGRES_PASSWORD: password
+       POSTGRES_DATABASE: keycloak 
+     links: 
+       - postgresql:postgresql
+     depends_on:
+       - "postgresql"
+     ports:
+        - "8080:8080"
+  
+  elasticsearch:
+     image : "elasticsearch:latest"
+     environment:
+       - bootstrap.memory_lock=true
+       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+     volumes:
+       - elasticsearch:/usr/share/elasticsearch/data
+     ports:
+       - 9200:9200
+       - 9300:9300
+
+  cassandra:
+    image : "cassandra:latest"
+    volumes:
+      - cassandra:/var/lib/cassandra
+    ports:
+     - "9042:9042"
+
+  players:
+    image: sunbird/player:0.0.6-bronze
+    env_file:
+      sunbird_player.env
+    links: 
+      -  mongo
+    depends_on:
+       - "mongo"
+    ports:
+     - "3000:3000"
+
+  content-services:
+    image: sunbird/content_service:0.0.1-bronze
+    env_file:
+      sunbird_content_service.env
+    links:
+      -  mongo
+    depends_on:
+       - "mongo"
+    ports:
+     - "5000:5000"
+
+  learner-services:
+    image: sunbird/learner_service:0.0.1-bronze
+    env_file:
+      sunbird_learner-service.env
+    ports:
+     - "9000:9000"
+
+  actor-services:
+    image: sunbird/actor-service:0.0.1-bronze
+    env_file:
+      sunbird_actor-service.env
+    links:
+      - cassandra
+      - elasticsearch
+      - postgresql
+    depends_on:
+       - "postgresql"
+       - "learner-services"
+       - "elasticsearch"
+       - "cassandra"
+    ports:
+     - 8088:8088
+
+volumes:
+  elasticsearch:
+    driver: local
+  cassandra:
+    driver: local
+
+networks:
+  overlay:
